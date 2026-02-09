@@ -1,0 +1,89 @@
+# GoReleaser configuration for ReleaseForge
+# See https://goreleaser.com/customization/ for more details
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - 386
+      - arm
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.BuildTime={{.Date}}
+      - -X main.GitCommit={{.FullCommit}}
+    ignore:
+      - goos: windows
+        goarch: arm
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: "releaseforge-{{ .Os }}-{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+release:
+  github:
+    owner: AxeForging
+    name: releaseforge
+  draft: false
+  prerelease: auto
+  name_template: "Release {{ .Tag }}"
+  footer: |
+    ## Installation
+
+    ### Go Install
+    ```bash
+    go install github.com/AxeForging/releaseforge@{{ .Tag }}
+    ```
+
+    ### Linux/macOS (AMD64)
+    ```bash
+    curl -L https://github.com/AxeForging/releaseforge/releases/download/{{ .Tag }}/releaseforge-linux-amd64.tar.gz | tar xz
+    chmod +x releaseforge-linux-amd64
+    sudo mv releaseforge-linux-amd64 /usr/local/bin/releaseforge
+    ```
+
+    ### Linux/macOS (ARM64)
+    ```bash
+    curl -L https://github.com/AxeForging/releaseforge/releases/download/{{ .Tag }}/releaseforge-linux-arm64.tar.gz | tar xz
+    chmod +x releaseforge-linux-arm64
+    sudo mv releaseforge-linux-arm64 /usr/local/bin/releaseforge
+    ```
+
+    ### Windows
+    ```powershell
+    Invoke-WebRequest -Uri https://github.com/AxeForging/releaseforge/releases/download/{{ .Tag }}/releaseforge-windows-amd64.zip -OutFile releaseforge-windows-amd64.zip
+    Expand-Archive -Path releaseforge-windows-amd64.zip -DestinationPath .
+    Move-Item -Path releaseforge-windows-amd64/releaseforge-windows-amd64.exe -Destination releaseforge.exe
+    ```
