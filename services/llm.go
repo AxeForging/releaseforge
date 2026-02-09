@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/AxeForging/releasenotes/helpers"
+	"github.com/AxeForging/releaseforge/helpers"
 )
 
 type LLMService struct {

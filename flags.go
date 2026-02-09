@@ -6,14 +6,14 @@ var providerFlag = cli.StringFlag{
 	Name:   "provider, p",
 	Value:  "gemini",
 	Usage:  "LLM provider: gemini, openai, or anthropic (default: gemini)",
-	EnvVar: "RELEASENOTES_PROVIDER",
+	EnvVar: "RELEASEFORGE_PROVIDER",
 }
 
 var modelFlag = cli.StringFlag{
 	Name:   "model, m",
 	Value:  "gemini-2.0-flash",
 	Usage:  "Model name (e.g. gemini-2.0-flash, gpt-4o, claude-sonnet-4-5-20250929)",
-	EnvVar: "RELEASENOTES_MODEL",
+	EnvVar: "RELEASEFORGE_MODEL",
 }
 
 var keyFlag = cli.StringFlag{
@@ -98,4 +98,45 @@ var forceGitModeFlag = cli.BoolFlag{
 var verboseFlag = cli.BoolFlag{
 	Name:  "verbose, v",
 	Usage: "Enable verbose/debug logging",
+}
+
+// Bump command flags
+
+var bumpTagFlag = cli.StringFlag{
+	Name:   "tag",
+	Usage:  "Base semver tag to compare against (e.g. v1.2.3). Auto-detects latest if omitted",
+	EnvVar: "RELEASEFORGE_BUMP_TAG",
+}
+
+var bumpBranchFlag = cli.StringFlag{
+	Name:   "branch, b",
+	Value:  "HEAD",
+	Usage:  "Target branch or ref to compare (default: HEAD)",
+	EnvVar: "RELEASEFORGE_BUMP_BRANCH",
+}
+
+var bumpMaxCommitsFlag = cli.IntFlag{
+	Name:  "max-commits",
+	Value: 200,
+	Usage: "Maximum number of commits to analyze between tag and branch",
+}
+
+var bumpOutputJSONFlag = cli.StringFlag{
+	Name:  "output-json",
+	Usage: "Save detailed analysis as JSON to this file path",
+}
+
+var bumpOutputVersionFlag = cli.StringFlag{
+	Name:  "output-version",
+	Usage: "Save the next version string to this file path",
+}
+
+var bumpQuietFlag = cli.BoolFlag{
+	Name:  "quiet, q",
+	Usage: "Only output the next version string (no report)",
+}
+
+var bumpStrictFlag = cli.BoolFlag{
+	Name:  "strict, s",
+	Usage: "Fail if any non-conventional commits are found (check command only)",
 }
