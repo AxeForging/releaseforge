@@ -1,0 +1,5 @@
+dist/
+releasenotes
+*.exe
+.env
+/tmp/
