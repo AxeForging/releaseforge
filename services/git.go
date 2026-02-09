@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/AxeForging/releasenotes/domain"
-	"github.com/AxeForging/releasenotes/helpers"
+	"github.com/AxeForging/releaseforge/domain"
+	"github.com/AxeForging/releaseforge/helpers"
 )
 
 type GitService struct{}
@@ -219,6 +219,34 @@ func (g *GitService) ParseSemverTag(tag string) *domain.SemVer {
 		Prerelease: match[4],
 		Build:      match[5],
 	}
+}
+
+func (g *GitService) getCommitsInRange(rangeArg string, maxCommits int) ([]domain.CommitInfo, error) {
+	format := "%H|||%B%x00"
+	out, err := g.runGit("log", rangeArg, fmt.Sprintf("--format=%s", format), fmt.Sprintf("--max-count=%d", maxCommits))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commits in range %s: %w", rangeArg, err)
+	}
+
+	var commits []domain.CommitInfo
+	entries := strings.Split(out, "\x00")
+	for _, entry := range entries {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		parts := strings.SplitN(entry, "|||", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		commits = append(commits, domain.CommitInfo{
+			Hash:    strings.TrimSpace(parts[0]),
+			Message: strings.TrimSpace(parts[1]),
+		})
+	}
+
+	helpers.Log.Info().Msgf("Found %d commits in range %s", len(commits), rangeArg)
+	return commits, nil
 }
 
 func (g *GitService) IsValidSemverTag(tag string) bool {

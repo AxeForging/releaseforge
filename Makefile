@@ -2,7 +2,7 @@
 
 GOOS_ARCH := linux/amd64 linux/arm64 linux/386 linux/arm darwin/amd64 darwin/arm64 windows/amd64 windows/arm64 windows/386
 DIST_DIR := dist
-BINARY_NAME := releasenotes
+BINARY_NAME := releaseforge
 
 ifeq ($(origin VERSION), environment)
 else

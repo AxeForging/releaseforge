@@ -1,5 +1,5 @@
 dist/
-releasenotes
+releaseforge
 *.exe
 .env
 /tmp/

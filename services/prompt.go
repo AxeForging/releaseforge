@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AxeForging/releasenotes/domain"
-	"github.com/AxeForging/releasenotes/helpers"
+	"github.com/AxeForging/releaseforge/domain"
+	"github.com/AxeForging/releaseforge/helpers"
 )
 
 type PromptService struct{}
@@ -187,9 +187,9 @@ func (p *PromptService) ParseResponse(text string) (*domain.StructuredResult, er
 func (p *PromptService) GenerateOutputPaths(basePath string) domain.OutputConfig {
 	if basePath == "" {
 		return domain.OutputConfig{
-			MarkdownFile: "/tmp/releasenotes-output.md",
+			MarkdownFile: "/tmp/releaseforge-output.md",
 			VersionFile:  "/tmp/suggested-version.txt",
-			JSONFile:     "/tmp/releasenotes-output.json",
+			JSONFile:     "/tmp/releaseforge-output.json",
 		}
 	}
 
@@ -203,7 +203,7 @@ func (p *PromptService) GenerateOutputPaths(basePath string) domain.OutputConfig
 	}
 
 	outputDir := basePath
-	baseFileName := "releasenotes-output"
+	baseFileName := "releaseforge-output"
 
 	ext := filepath.Ext(basePath)
 	if ext == ".md" || ext == ".json" || ext == ".txt" {

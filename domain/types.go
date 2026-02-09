@@ -72,3 +72,21 @@ type SemVer struct {
 	Prerelease string
 	Build      string
 }
+
+type AnalyzedCommit struct {
+	Hash         string `json:"hash"`
+	Message      string `json:"message"`
+	Type         string `json:"type"`
+	Scope        string `json:"scope,omitempty"`
+	Description  string `json:"description"`
+	Breaking     bool   `json:"breaking"`
+	BumpLevel    string `json:"bump_level"`
+	Conventional bool   `json:"conventional"`
+}
+
+type BumpAnalysis struct {
+	BumpLevel            string                      `json:"bump_level"`
+	Commits              map[string][]AnalyzedCommit `json:"commits"`
+	TotalCount           int                         `json:"total_count"`
+	NonConventionalCount int                         `json:"non_conventional_count"`
+}

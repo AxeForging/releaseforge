@@ -1,4 +1,4 @@
-module github.com/AxeForging/releasenotes
+module github.com/AxeForging/releaseforge
 
 go 1.24
 

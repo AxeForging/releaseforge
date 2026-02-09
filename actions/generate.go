@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AxeForging/releasenotes/domain"
-	"github.com/AxeForging/releasenotes/helpers"
-	"github.com/AxeForging/releasenotes/services"
+	"github.com/AxeForging/releaseforge/domain"
+	"github.com/AxeForging/releaseforge/helpers"
+	"github.com/AxeForging/releaseforge/services"
 	"github.com/urfave/cli"
 )
 
