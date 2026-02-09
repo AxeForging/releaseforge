@@ -3,3 +3,10 @@ releaseforge
 *.exe
 .env
 /tmp/
+output.txt
+out.txt
+coverage/
+*.test
+/.cache
+/.tmp
+.claude/
