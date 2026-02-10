@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="doc/banner.png" alt="ReleaseForge" width="400">
+</div>
+
 # ReleaseForge
 
 <div align="center">
