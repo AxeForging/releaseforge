@@ -240,16 +240,35 @@ func (a *GenerateAction) generateWithLLM(
 		existingTags,
 	)
 
-	helpers.Log.Info().Msgf("Sending prompt to %s (%s)...", inputs.Provider, inputs.Model)
-	start := time.Now()
+	maxRetries := 2
+	var lastErr error
 
-	response, err := a.llmSvc.Generate(inputs.Provider, inputs.Key, inputs.Model, prompt)
-	if err != nil {
-		return nil, err
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if attempt > 1 {
+			helpers.Log.Info().Msgf("Retrying LLM generation (attempt %d/%d)...", attempt, maxRetries)
+		}
+
+		helpers.Log.Info().Msgf("Sending prompt to %s (%s)...", inputs.Provider, inputs.Model)
+		start := time.Now()
+
+		response, err := a.llmSvc.Generate(inputs.Provider, inputs.Key, inputs.Model, prompt)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		duration := time.Since(start).Seconds()
+		helpers.Log.Info().Msgf("LLM response received in %.2fs (%d characters)", duration, len(response))
+
+		result, err := a.promptSvc.ParseResponse(response)
+		if err != nil {
+			helpers.Log.Warn().Msgf("Parse failed on attempt %d: %v", attempt, err)
+			lastErr = err
+			continue
+		}
+
+		return result, nil
 	}
 
-	duration := time.Since(start).Seconds()
-	helpers.Log.Info().Msgf("LLM response received in %.2fs (%d characters)", duration, len(response))
-
-	return a.promptSvc.ParseResponse(response)
+	return nil, lastErr
 }

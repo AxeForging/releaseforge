@@ -172,16 +172,79 @@ func (p *PromptService) ParseResponse(text string) (*domain.StructuredResult, er
 		jsonEnd := strings.LastIndex(text, "}")
 		if jsonStart >= 0 && jsonEnd > jsonStart {
 			extracted := text[jsonStart : jsonEnd+1]
-			if err2 := json.Unmarshal([]byte(extracted), &result); err2 != nil {
-				return nil, fmt.Errorf("failed to parse LLM response as JSON: %w\nRaw output: %s", err, text[:min(500, len(text))])
+			if err2 := json.Unmarshal([]byte(extracted), &result); err2 == nil {
+				helpers.Log.Info().Msg("Structured JSON parsed successfully (extracted from text)")
+				return &result, nil
 			}
-		} else {
-			return nil, fmt.Errorf("failed to parse LLM response as JSON: %w\nRaw output: %s", err, text[:min(500, len(text))])
 		}
+
+		// Try to recover truncated JSON by extracting release_notes field
+		if recovered := recoverTruncatedJSON(text); recovered != nil {
+			helpers.Log.Warn().Msg("LLM response was truncated — recovered partial release notes")
+			return recovered, nil
+		}
+
+		return nil, fmt.Errorf("failed to parse LLM response as JSON: %w\nRaw output: %s", err, text[:min(500, len(text))])
 	}
 
 	helpers.Log.Info().Msg("Structured JSON parsed successfully")
 	return &result, nil
+}
+
+// recoverTruncatedJSON attempts to extract release_notes from a truncated JSON response.
+// This handles cases where the LLM hits its token limit mid-response.
+func recoverTruncatedJSON(text string) *domain.StructuredResult {
+	// Look for "release_notes" field value
+	re := regexp.MustCompile(`"release_notes"\s*:\s*"`)
+	loc := re.FindStringIndex(text)
+	if loc == nil {
+		return nil
+	}
+
+	// Extract the string value, handling escaped characters
+	start := loc[1]
+	var sb strings.Builder
+	i := start
+	for i < len(text) {
+		if text[i] == '\\' && i+1 < len(text) {
+			switch text[i+1] {
+			case '"':
+				sb.WriteByte('"')
+			case 'n':
+				sb.WriteByte('\n')
+			case 't':
+				sb.WriteByte('\t')
+			case '\\':
+				sb.WriteByte('\\')
+			default:
+				sb.WriteByte(text[i+1])
+			}
+			i += 2
+			continue
+		}
+		if text[i] == '"' {
+			break
+		}
+		sb.WriteByte(text[i])
+		i++
+	}
+
+	content := strings.TrimSpace(sb.String())
+	if content == "" {
+		return nil
+	}
+
+	// Try to extract suggested_version too
+	version := ""
+	versionRe := regexp.MustCompile(`"suggested_version"\s*:\s*"([^"]*)"`)
+	if m := versionRe.FindStringSubmatch(text); len(m) > 1 {
+		version = m[1]
+	}
+
+	return &domain.StructuredResult{
+		ReleaseNotes:     content,
+		SuggestedVersion: version,
+	}
 }
 
 func (p *PromptService) GenerateOutputPaths(basePath string) domain.OutputConfig {
