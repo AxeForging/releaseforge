@@ -95,6 +95,12 @@ var forceGitModeFlag = cli.BoolFlag{
 	Usage: "Force using git commit log analysis instead of LLM (no API key needed)",
 }
 
+var githubTokenFlag = cli.StringFlag{
+	Name:   "github-token",
+	Usage:  "GitHub token for resolving contributor usernames from emails",
+	EnvVar: "GITHUB_TOKEN",
+}
+
 var verboseFlag = cli.BoolFlag{
 	Name:  "verbose, v",
 	Usage: "Enable verbose/debug logging",
