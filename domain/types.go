@@ -9,6 +9,7 @@ type DetailedCommit struct {
 	Hash         string   `json:"hash"`
 	Message      string   `json:"message"`
 	Author       string   `json:"author"`
+	AuthorEmail  string   `json:"author_email"`
 	Date         string   `json:"date"`
 	FilesChanged []string `json:"files_changed"`
 	FileCount    int      `json:"file_count"`
