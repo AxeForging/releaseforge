@@ -52,6 +52,7 @@ func main() {
 		outputFlag,
 		useGitFallbackFlag,
 		forceGitModeFlag,
+		githubTokenFlag,
 		verboseFlag,
 	}
 

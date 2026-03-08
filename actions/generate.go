@@ -43,10 +43,16 @@ func (a *GenerateAction) Execute(c *cli.Context) error {
 		return err
 	}
 
+	// Setup GitHub service for contributor resolution
+	ghSvc := services.NewGitHubService(c.String("github-token"))
+	if ghSvc.HasToken() {
+		helpers.Log.Info().Msg("GitHub token provided — will resolve contributor usernames")
+	}
+
 	// Get detailed commits
 	var detailedCommits []domain.DetailedCommit
 	if len(commits) > 0 {
-		detailedCommits, err = a.gitSvc.GetCommitDetails(commits)
+		detailedCommits, err = a.gitSvc.GetCommitDetails(commits, ghSvc)
 		if err != nil {
 			helpers.Log.Warn().Msgf("Could not get commit details: %v", err)
 		}

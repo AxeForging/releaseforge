@@ -31,6 +31,9 @@ inputs:
   template-name:
     description: "Built-in template: semver-release-notes, conventional-changelog, version-analysis"
     required: false
+  github-token:
+    description: "GitHub token for resolving contributor usernames from emails"
+    required: false
   use-git-fallback:
     description: "Fall back to git commit log analysis if LLM fails"
     required: false
@@ -87,6 +90,7 @@ runs:
         GEMINI_API_KEY: ${{ inputs.api-key }}
         OPENAI_API_KEY: ${{ inputs.api-key }}
         ANTHROPIC_API_KEY: ${{ inputs.api-key }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         CMD="${{ inputs.command }}"
 
