@@ -1,0 +1,66 @@
+name: ReleaseForge
+
+on:
+  workflow_call:
+    inputs:
+      command:
+        description: "Command: bump, generate"
+        type: string
+        default: "bump"
+      tag:
+        description: "Base semver tag"
+        type: string
+        default: ""
+      branch:
+        description: "Target branch"
+        type: string
+        default: "HEAD"
+      provider:
+        description: "LLM provider for generate"
+        type: string
+        default: "gemini"
+      model:
+        description: "LLM model for generate"
+        type: string
+        default: "gemini-2.0-flash"
+      template-name:
+        description: "Built-in template name"
+        type: string
+        default: ""
+      max-commits:
+        description: "Max commits to analyze"
+        type: string
+        default: "200"
+    secrets:
+      api_key:
+        description: "LLM API key (for generate command)"
+        required: false
+    outputs:
+      next-version:
+        description: "Next semver version"
+        value: ${{ jobs.releaseforge.outputs.next-version }}
+
+permissions:
+  contents: read
+
+jobs:
+  releaseforge:
+    runs-on: ubuntu-latest
+    outputs:
+      next-version: ${{ steps.rf.outputs.next-version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: rf
+        uses: AxeForging/releaseforge@main
+        with:
+          command: ${{ inputs.command }}
+          tag: ${{ inputs.tag }}
+          branch: ${{ inputs.branch }}
+          provider: ${{ inputs.provider }}
+          model: ${{ inputs.model }}
+          api-key: ${{ secrets.api_key }}
+          template-name: ${{ inputs.template-name }}
+          max-commits: ${{ inputs.max-commits }}
