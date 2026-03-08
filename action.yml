@@ -24,7 +24,7 @@ inputs:
   model:
     description: "LLM model name for generate"
     required: false
-    default: "gemini-2.0-flash"
+    default: "gemini-2.5-flash"
   api-key:
     description: "API key for the LLM provider (generate command)"
     required: false

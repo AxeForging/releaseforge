@@ -11,8 +11,8 @@ var providerFlag = cli.StringFlag{
 
 var modelFlag = cli.StringFlag{
 	Name:   "model, m",
-	Value:  "gemini-2.0-flash",
-	Usage:  "Model name (e.g. gemini-2.0-flash, gpt-4o, claude-sonnet-4-5-20250929)",
+	Value:  "gemini-2.5-flash",
+	Usage:  "Model name (e.g. gemini-2.5-flash, gpt-4o, claude-sonnet-4-5-20250929)",
 	EnvVar: "RELEASEFORGE_MODEL",
 }
 

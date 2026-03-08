@@ -22,7 +22,7 @@ on:
       model:
         description: "LLM model for generate"
         type: string
-        default: "gemini-2.0-flash"
+        default: "gemini-2.5-flash"
       template-name:
         description: "Built-in template name"
         type: string
