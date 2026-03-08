@@ -118,7 +118,7 @@ func (g *GitService) parseAndFilterCommits(output string, ignoreList []string) (
 	return commits, nil
 }
 
-func (g *GitService) GetCommitDetails(commits []domain.CommitInfo) ([]domain.DetailedCommit, error) {
+func (g *GitService) GetCommitDetails(commits []domain.CommitInfo, ghSvc *GitHubService) ([]domain.DetailedCommit, error) {
 	helpers.Log.Info().Msg("Gathering detailed commit information...")
 	var detailed []domain.DetailedCommit
 
@@ -137,7 +137,9 @@ func (g *GitService) GetCommitDetails(commits []domain.CommitInfo) ([]domain.Det
 		emailOut, err := g.runGit("show", c.Hash, "--format=%ae", "--no-patch")
 		if err == nil {
 			dc.AuthorEmail = strings.TrimSpace(emailOut)
-			if ghUser := extractGitHubUser(dc.AuthorEmail); ghUser != "" {
+			if ghSvc != nil {
+				dc.Author = ghSvc.ResolveAuthor(dc.Author, dc.AuthorEmail)
+			} else if ghUser := extractGitHubUser(dc.AuthorEmail); ghUser != "" {
 				dc.Author = "@" + ghUser
 			}
 		}

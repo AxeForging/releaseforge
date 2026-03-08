@@ -293,7 +293,7 @@ func (s *SemverService) GetCommitsBetween(fromTag, toRef string, maxCommits int)
 		return nil, err
 	}
 
-	detailed, err := s.git.GetCommitDetails(commits)
+	detailed, err := s.git.GetCommitDetails(commits, nil)
 	if err != nil {
 		return nil, err
 	}
