@@ -1,0 +1,137 @@
+name: "ReleaseForge"
+description: "Automated version bumping and AI-powered release notes from conventional commits"
+author: "AxeForging"
+inputs:
+  command:
+    description: "Command to run: bump, generate"
+    required: true
+    default: "bump"
+  tag:
+    description: "Base semver tag to compare against (auto-detects latest if omitted)"
+    required: false
+  branch:
+    description: "Target branch or ref to compare (default: HEAD)"
+    required: false
+    default: "HEAD"
+  quiet:
+    description: "Only output the version string (bump command)"
+    required: false
+    default: "true"
+  provider:
+    description: "LLM provider for generate: gemini, openai, anthropic"
+    required: false
+    default: "gemini"
+  model:
+    description: "LLM model name for generate"
+    required: false
+    default: "gemini-2.0-flash"
+  api-key:
+    description: "API key for the LLM provider (generate command)"
+    required: false
+  template-name:
+    description: "Built-in template: semver-release-notes, conventional-changelog, version-analysis"
+    required: false
+  use-git-fallback:
+    description: "Fall back to git commit log analysis if LLM fails"
+    required: false
+    default: "true"
+  max-commits:
+    description: "Maximum number of commits to analyze"
+    required: false
+    default: "200"
+  version:
+    description: "Version of releaseforge to use (defaults to latest)"
+    required: false
+
+outputs:
+  next-version:
+    description: "The next semver version (from bump command)"
+    value: ${{ steps.run.outputs.next_version }}
+  release-notes:
+    description: "Path to generated release notes file (from generate command)"
+    value: ${{ steps.run.outputs.release_notes }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download ReleaseForge
+      shell: bash
+      run: |
+        OS="linux"
+        ARCH="amd64"
+        if [[ "${{ runner.os }}" == "macOS" ]]; then OS="darwin"; fi
+        if [[ "${{ runner.arch }}" == "ARM64" ]]; then ARCH="arm64"; fi
+
+        VERSION="${{ inputs.version }}"
+        if [ -z "$VERSION" ]; then
+          VERSION="${{ github.action_ref }}"
+        fi
+        if [ -z "$VERSION" ] || [ "$VERSION" == "main" ]; then
+          # Fetch latest release tag
+          VERSION=$(curl -sS -o /dev/null -w '%{redirect_url}' \
+            "https://github.com/AxeForging/releaseforge/releases/latest" | grep -oP '[^/]+$')
+          echo "Resolved latest version: ${VERSION}"
+        fi
+
+        URL="https://github.com/AxeForging/releaseforge/releases/download/${VERSION}/releaseforge-${OS}-${ARCH}.tar.gz"
+        echo "Downloading releaseforge ${VERSION} from ${URL}..."
+        curl -sSL "$URL" -o /tmp/releaseforge.tar.gz
+        tar -xzf /tmp/releaseforge.tar.gz -C /tmp
+        chmod +x /tmp/releaseforge
+        echo "releaseforge ${VERSION} installed successfully"
+
+    - name: Run ReleaseForge
+      id: run
+      shell: bash
+      env:
+        GEMINI_API_KEY: ${{ inputs.api-key }}
+        OPENAI_API_KEY: ${{ inputs.api-key }}
+        ANTHROPIC_API_KEY: ${{ inputs.api-key }}
+      run: |
+        CMD="${{ inputs.command }}"
+
+        if [ "$CMD" = "bump" ]; then
+          ARGS="bump"
+          if [ -n "${{ inputs.tag }}" ]; then
+            ARGS="$ARGS --tag ${{ inputs.tag }}"
+          fi
+          ARGS="$ARGS --branch ${{ inputs.branch }}"
+          ARGS="$ARGS --max-commits ${{ inputs.max-commits }}"
+
+          if [ "${{ inputs.quiet }}" = "true" ]; then
+            NEXT_VERSION=$(/tmp/releaseforge $ARGS --quiet)
+            echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
+            echo "Next version: ${NEXT_VERSION}"
+          else
+            /tmp/releaseforge $ARGS
+            NEXT_VERSION=$(/tmp/releaseforge $ARGS --quiet)
+            echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
+          fi
+
+        elif [ "$CMD" = "generate" ]; then
+          ARGS="generate"
+          ARGS="$ARGS --provider ${{ inputs.provider }}"
+          ARGS="$ARGS --model ${{ inputs.model }}"
+          ARGS="$ARGS --max-commits ${{ inputs.max-commits }}"
+
+          if [ -n "${{ inputs.tag }}" ]; then
+            ARGS="$ARGS --git-tag ${{ inputs.tag }} --analyze-from-tag"
+          fi
+
+          if [ -n "${{ inputs.template-name }}" ]; then
+            ARGS="$ARGS --template-name ${{ inputs.template-name }}"
+          fi
+
+          if [ "${{ inputs.use-git-fallback }}" = "true" ]; then
+            ARGS="$ARGS --use-git-fallback"
+          fi
+
+          ARGS="$ARGS --output /tmp/release-notes.md"
+          /tmp/releaseforge $ARGS
+          echo "release_notes=/tmp/release-notes.md" >> "$GITHUB_OUTPUT"
+          echo "Release notes generated at /tmp/release-notes.md"
+
+        else
+          echo "::error::Unknown command: $CMD. Use 'bump' or 'generate'."
+          exit 1
+        fi

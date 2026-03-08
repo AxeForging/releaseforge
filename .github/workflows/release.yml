@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g., v1.0.0)'
-        required: true
+        description: 'Release tag (leave empty for auto-bump from conventional commits)'
+        required: false
         type: string
 
 permissions:
@@ -29,15 +29,40 @@ jobs:
       - name: Run tests
         run: go test ./... -v
 
+      - name: Build releaseforge
+        run: make build-local
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            NEXT=$(./releaseforge bump --quiet)
+            echo "Auto-bumped version: ${NEXT}"
+            echo "tag=${NEXT}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate release notes
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          ARGS="generate --use-git-fallback --output /tmp/release-notes.md"
+          if [ -n "$PREV_TAG" ]; then
+            ARGS="$ARGS --git-tag $PREV_TAG --analyze-from-tag"
+          fi
+          ./releaseforge $ARGS
+
       - name: Create and push tag
         run: |
-          git tag ${{ inputs.tag }}
-          git push origin ${{ inputs.tag }}
+          git tag ${{ steps.version.outputs.tag }}
+          git push origin ${{ steps.version.outputs.tag }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
-          args: release --clean
+          args: release --clean --release-notes /tmp/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
