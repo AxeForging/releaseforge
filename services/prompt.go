@@ -380,7 +380,11 @@ func (p *PromptService) GenerateGitFallbackNotes(
 		authors := uniqueAuthors(detailedCommits)
 		if len(authors) > 0 {
 			for _, a := range authors {
-				notes.WriteString(fmt.Sprintf("- %s\n", a))
+				if strings.HasPrefix(a, "@") {
+					notes.WriteString(fmt.Sprintf("- [%s](https://github.com/%s)\n", a, a[1:]))
+				} else {
+					notes.WriteString(fmt.Sprintf("- %s\n", a))
+				}
 			}
 		} else {
 			notes.WriteString("- N/A\n")
