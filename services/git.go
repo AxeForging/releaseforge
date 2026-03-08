@@ -128,10 +128,18 @@ func (g *GitService) GetCommitDetails(commits []domain.CommitInfo) ([]domain.Det
 			Message: c.Message,
 		}
 
-		// Get author and date
+		// Get author name, email, and date
 		authorOut, err := g.runGit("show", c.Hash, "--format=%an", "--no-patch")
 		if err == nil {
 			dc.Author = strings.TrimSpace(authorOut)
+		}
+
+		emailOut, err := g.runGit("show", c.Hash, "--format=%ae", "--no-patch")
+		if err == nil {
+			dc.AuthorEmail = strings.TrimSpace(emailOut)
+			if ghUser := extractGitHubUser(dc.AuthorEmail); ghUser != "" {
+				dc.Author = "@" + ghUser
+			}
 		}
 
 		dateOut, err := g.runGit("show", c.Hash, "--format=%ci", "--no-patch")
@@ -271,6 +279,18 @@ func (g *GitService) touchesIgnored(files, ignoreList []string) bool {
 		}
 	}
 	return false
+}
+
+func extractGitHubUser(email string) string {
+	if !strings.HasSuffix(email, "@users.noreply.github.com") {
+		return ""
+	}
+	local := strings.TrimSuffix(email, "@users.noreply.github.com")
+	// Handle id+username format (e.g. 12345+username@users.noreply.github.com)
+	if idx := strings.Index(local, "+"); idx >= 0 {
+		return local[idx+1:]
+	}
+	return local
 }
 
 func splitLines(s string) []string {
